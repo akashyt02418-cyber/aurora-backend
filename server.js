@@ -8,22 +8,32 @@ dotenv.config();
 const productRoutes = require('./routes/productRoutes');
 
 const app = express();
-app.use(cors());
+
+// CORS (abhi open rakha hai; baad me Netlify domain set kar dena)
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
+// Routes
 app.use('/api/products', productRoutes);
-
-const PORT = process.env.PORT || 5000;
-
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/awwwards-shop')
-    .then(() => console.log('MongoDB Connected'))
-    .catch(err => console.log(err));
 
 // Basic route
 app.get('/', (req, res) => {
-    res.send('API is running...');
+  res.send('API is running...');
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+const PORT = process.env.PORT || 5000;
+
+// 🔥 MongoDB connect (ENV se)
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log('MongoDB Connected');
+
+    // Server start only after DB connects (better practice)
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch(err => {
+    console.error("DB Error:", err);
+    process.exit(1);
+  });
