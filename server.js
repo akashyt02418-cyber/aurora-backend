@@ -9,8 +9,8 @@ const productRoutes = require('./routes/productRoutes');
 
 const app = express();
 
-// CORS (abhi open rakha hai; baad me Netlify domain set kar dena)
-app.use(cors({ origin: "*" }));
+// Middleware
+app.use(cors());
 app.use(express.json());
 
 // Routes
@@ -18,22 +18,32 @@ app.use('/api/products', productRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
-  res.send('API is running...');
+  res.send('Aurora E-commerce API is running...');
 });
 
 const PORT = process.env.PORT || 5000;
+const MONGO_URI = process.env.MONGO_URI;
 
-// 🔥 MongoDB connect (ENV se)
-mongoose.connect(process.env.MONGO_URI)
+if (!MONGO_URI || MONGO_URI.includes('YOUR_PASSWORD')) {
+  console.error("❌ ERROR: MongoDB URI is missing or contains 'YOUR_PASSWORD' placeholder.");
+  console.log("Please update your .env file with your actual MongoDB connection string.");
+  // process.exit(1); // Don't exit yet so we can see the message
+}
+
+// 🔥 MongoDB connect
+mongoose.connect(MONGO_URI)
   .then(() => {
-    console.log('MongoDB Connected');
-
-    // Server start only after DB connects (better practice)
+    console.log('✅ MongoDB Connected Successfully');
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`🚀 Server running on port ${PORT}`);
     });
   })
   .catch(err => {
-    console.error("DB Error:", err);
-    process.exit(1);
+    console.error("❌ Database Connection Error:", err.message);
+    console.log("Tip: Check your IP Whitelist in MongoDB Atlas and ensure your password is correct.");
+    
+    // In dev mode, we might still want the server to start even if DB fails (fallback to mock data in routes)
+    app.listen(PORT, () => {
+        console.log(`🚀 Server started in FALLBACK mode on port ${PORT} (DB connection failed)`);
+    });
   });
